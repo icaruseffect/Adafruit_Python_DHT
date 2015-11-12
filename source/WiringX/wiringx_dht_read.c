@@ -20,9 +20,10 @@
 // SOFTWARE.
 #include <stdbool.h>
 #include <stdlib.h>
+#include <wiringX.h>
 
-#include "pi_dht_read.h"
-#include "pi_mmio.h"
+#include "wiringx_dht_read.h"
+//#include "wiringx_mmio.h"
 
 // This is the only processor specific magic value, the maximum amount of time to
 // spin in a loop before bailing out and considering the read a timeout.  This should
@@ -35,7 +36,7 @@
 // the data afterwards.
 #define DHT_PULSES 41
 
-int pi_dht_read(int type, int pin, float* humidity, float* temperature) {
+int wiringx_dht_read(int type, int pin, float* humidity, float* temperature) {
   // Validate humidity and temperature arguments and set them to zero.
   if (humidity == NULL || temperature == NULL) {
     return DHT_ERROR_ARGUMENT;
@@ -44,7 +45,7 @@ int pi_dht_read(int type, int pin, float* humidity, float* temperature) {
   *humidity = 0.0f;
 
   // Initialize GPIO library.
-  if (pi_mmio_init() < 0) {
+  if (wiringXSetup() < 0) {
     return DHT_ERROR_GPIO;
   }
 
@@ -53,31 +54,31 @@ int pi_dht_read(int type, int pin, float* humidity, float* temperature) {
   int pulseCounts[DHT_PULSES*2] = {0};
 
   // Set pin to output.
-  pi_mmio_set_output(pin);
+  pinMode(pin, OUTPUT);
 
   // Bump up process priority and change scheduler to try to try to make process more 'real time'.
   set_max_priority();
 
   // Set pin high for ~500 milliseconds.
-  pi_mmio_set_high(pin);
+  digitalWrite(pin, HIGH);
   sleep_milliseconds(500);
 
   // The next calls are timing critical and care should be taken
   // to ensure no unnecssary work is done below.
 
   // Set pin low for ~20 milliseconds.
-  pi_mmio_set_low(pin);
+  digitalWrite(pin, LOW);
   busy_wait_milliseconds(20);
 
   // Set pin at input.
-  pi_mmio_set_input(pin);
+  pinMode(pin, INPUT);
   // Need a very short delay before reading pins or else value is sometimes still low.
   for (volatile int i = 0; i < 50; ++i) {
   }
 
   // Wait for DHT to pull pin low.
   uint32_t count = 0;
-  while (pi_mmio_input(pin)) {
+  while (digitalRead(pin)) {
     if (++count >= DHT_MAXCOUNT) {
       // Timeout waiting for response.
       set_default_priority();
@@ -88,7 +89,7 @@ int pi_dht_read(int type, int pin, float* humidity, float* temperature) {
   // Record pulse widths for the expected result bits.
   for (int i=0; i < DHT_PULSES*2; i+=2) {
     // Count how long pin is low and store in pulseCounts[i]
-    while (!pi_mmio_input(pin)) {
+    while (!digitalRead(pin)) {
       if (++pulseCounts[i] >= DHT_MAXCOUNT) {
         // Timeout waiting for response.
         set_default_priority();
@@ -96,7 +97,7 @@ int pi_dht_read(int type, int pin, float* humidity, float* temperature) {
       }
     }
     // Count how long pin is high and store in pulseCounts[i+1]
-    while (pi_mmio_input(pin)) {
+    while (digitalRead(pin)) {
       if (++pulseCounts[i+1] >= DHT_MAXCOUNT) {
         // Timeout waiting for response.
         set_default_priority();

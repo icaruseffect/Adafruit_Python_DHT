@@ -1,6 +1,5 @@
 // Copyright (c) 2014 Adafruit Industries
 // Author: Tony DiCola
-// Based on code from Gert van Loo & Dom: http://elinux.org/RPi_Low-level_peripherals#GPIO_Code_examples
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,37 +18,15 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
+#ifndef PI_2_DHT_READ_H
+#define PI_2_DHT_READ_H
 
-#include "pi_mmio.h"
+#include "../common_dht_read.h"
 
-#define BASE 0x20000000
-#define GPIO_BASE (BASE + 0x200000)
-#define GPIO_LENGTH 4096
+// Read DHT sensor connected to GPIO pin (using BCM numbering).  Humidity and temperature will be 
+// returned in the provided parameters. If a successfull reading could be made a value of 0 
+// (DHT_SUCCESS) will be returned.  If there was an error reading the sensor a negative value will
+// be returned.  Some errors can be ignored and retried, specifically DHT_ERROR_TIMEOUT or DHT_ERROR_CHECKSUM.
+int wiringx_dht_read(int sensor, int pin, float* humidity, float* temperature);
 
-volatile uint32_t* pi_mmio_gpio = NULL;
-
-int pi_mmio_init(void) {
-  if (pi_mmio_gpio == NULL) {
-    int fd = open("/dev/mem", O_RDWR | O_SYNC);
-    if (fd == -1) {
-      // Error opening /dev/mem.  Probably not running as root.
-      return MMIO_ERROR_DEVMEM;
-    }
-    // Map GPIO memory to location in process space.
-    pi_mmio_gpio = (uint32_t*)mmap(NULL, GPIO_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, fd, GPIO_BASE);
-    close(fd);
-    if (pi_mmio_gpio == MAP_FAILED) {
-      // Don't save the result if the memory mapping failed.
-      pi_mmio_gpio = NULL;
-      return MMIO_ERROR_MMAP;
-    }
-  }
-  return MMIO_SUCCESS;
-}
+#endif
