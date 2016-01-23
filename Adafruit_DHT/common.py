@@ -20,8 +20,6 @@
 # SOFTWARE.
 import time
 
-import platform_detect
-
 
 # Define error constants.
 DHT_SUCCESS        =  0
@@ -40,23 +38,8 @@ SENSORS = [DHT11, DHT22, AM2302]
 
 def get_platform():
 	"""Return a DHT platform interface for the currently detected platform."""
-	plat = platform_detect.platform_detect()
-	if plat == platform_detect.RASPBERRY_PI:
-		# Check for version 1 or 2 of the pi.
-		version = platform_detect.pi_version()
-		if version == 1:
-			import Raspberry_Pi
-			return Raspberry_Pi
-		elif version == 2:
-			import Raspberry_Pi_2
-			return Raspberry_Pi_2
-		else:
-			raise RuntimeError('No driver for detected Raspberry Pi version available!')
-	elif plat == platform_detect.BEAGLEBONE_BLACK:
-		import Beaglebone_Black
-		return Beaglebone_Black
-	else:
-		raise RuntimeError('Unknown platform.')
+	import WiringX
+	return WiringX
 
 def read(sensor, pin, platform=None):
 	"""Read DHT sensor of specified sensor type (DHT11, DHT22, or AM2302) on 

@@ -20,30 +20,30 @@
 // SOFTWARE.
 #include <Python.h>
 
-#include "Beaglebone_Black/bbb_dht_read.h"
+#include "WiringX/wiringx_dht_read.h"
 
 // Wrap calling dht_read function and expose it as a DHT.read Python module & function.
-static PyObject* Beaglebone_Black_Driver_read(PyObject *self, PyObject *args)
+static PyObject* WiringX_Driver_read(PyObject *self, PyObject *args)
 {
 	// Parse sensor and pin integer arguments.
-    int sensor, base, number;
-    if (!PyArg_ParseTuple(args, "iii", &sensor, &base, &number)) {
+    int sensor, pin;
+    if (!PyArg_ParseTuple(args, "ii", &sensor, &pin)) {
         return NULL;
     }
     // Call dht_read and return result code, humidity, and temperature.
     float humidity = 0, temperature = 0;
-    int result = bbb_dht_read(sensor, base, number, &humidity, &temperature);
+    int result = wiringx_dht_read(sensor, pin, &humidity, &temperature);
     return Py_BuildValue("iff", result, humidity, temperature);
 }
 
 // Boilerplate python module method list and initialization functions below.
 
 static PyMethodDef module_methods[] = {
-    {"read", Beaglebone_Black_Driver_read, METH_VARARGS, "Read DHT sensor value on a Beaglebone Black."},
+    {"read", WiringX_Driver_read, METH_VARARGS, "Read DHT sensor value using WiringX library."},
     {NULL, NULL, 0, NULL}
 };
 
-PyMODINIT_FUNC initBeaglebone_Black_Driver(void)
+PyMODINIT_FUNC initWiringX_Driver(void)
 {
-    Py_InitModule("Beaglebone_Black_Driver", module_methods);
+    Py_InitModule("WiringX_Driver", module_methods);
 }
